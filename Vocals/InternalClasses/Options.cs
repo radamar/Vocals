@@ -7,11 +7,21 @@ namespace Vocals.InternalClasses {
     [Serializable]
     public class Options {
 
-        public bool ToggleListening;
-        public Keys Key;
-        public string Answer;
-        public int Threshold;
-        public string Language;
+		public Options()
+		{
+			try
+			{
+				load();
+			}
+			catch
+			{
+				toggleListening = false;
+				key = Keys.ShiftKey;
+				answer = "Toggle listening";
+				threshold = 0;
+				language = null;
+			}
+		}
 
         public Options() {
             try {

@@ -3,101 +3,113 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Speech.Synthesis;
 
-namespace Vocals {
-    [Serializable]
-    public class Command {
+namespace Vocals
+{
+	[Serializable]
+	public class Command
+	{
+		public string commandString;
+		public List<Actions> actionList;
 
-        public string CommandString;
-        public List<Actions> ActionList;
+		public bool answering { get; set; }
 
+		public string answeringString { get; set; }
 
-        public bool Answering { get; set; }
+		public bool answeringSound { get; set; }
 
-        public string AnsweringString { get; set; }
+		public string answeringSoundPath { get; set; }
 
-        public bool AnsweringSound { get; set; }
+		public Command()
+		{
+		}
 
-        public string AnsweringSoundPath { get; set; }
+		public Command(string commandString, List<Actions> actionList)
+		{
+			this.commandString = commandString;
+			this.actionList = actionList;
+			this.answering = false;
+			this.answeringString = "";
+		}
 
-        public Command() {
+		public Command(string commandString, List<Actions> actionList, bool answering, string answeringString, bool answeringSound, string answeringSoundPath)
+		{
+			this.commandString = commandString;
+			this.actionList = actionList;
+			this.answering = answering;
+			this.answeringString = answeringString;
+			if (answeringString == null)
+			{
+				answeringString = "";
+			}
+			this.answeringSound = answeringSound;
+			this.answeringSoundPath = answeringSoundPath;
+			if (answeringSoundPath == null)
+			{
+				answeringSoundPath = "";
+			}
+		}
 
-        }
+		~Command()
+		{
+		}
 
-        public Command(string commandString, List<Actions> actionList) {
-            this.CommandString = commandString;
-            this.ActionList = actionList;
-            this.Answering = false;
-            this.AnsweringString = "";
-        }
+		public override string ToString()
+		{
+			string returnString = commandString + " : " + actionList.Count.ToString();
+			if (actionList.Count > 1)
+			{
+				returnString += " actions";
+			}
+			else {
+				returnString += " action";
+			}
 
-        public Command(string commandString, List<Actions> actionList, bool answering, string answeringString, bool answeringSound, string answeringSoundPath) {
-            this.CommandString = commandString;
-            this.ActionList = actionList;
-            this.Answering = answering;
-            this.AnsweringString = answeringString;
-            if (answeringString == null) {
-                answeringString = "";
-            }
-            this.AnsweringSound = answeringSound;
-            this.AnsweringSoundPath = answeringSoundPath;
-            if(answeringSoundPath == null){
-                answeringSoundPath = "";
-            }
-        }
+			return returnString;
+		}
 
-        ~Command() {
+		[DllImport("User32.dll")]
+		private static extern int SetForegroundWindow(IntPtr point);
 
-        }
+		[DllImport("User32.dll")]
+		private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
-        public override string ToString() {
-            string returnString = CommandString + " : " + ActionList.Count.ToString();
-            if (ActionList.Count > 1) {
-                returnString += " actions";
-            }
-            else {
-                returnString += " action";
-            }
+		public void perform(IntPtr winPointer)
+		{
+			SetForegroundWindow(winPointer);
+			ShowWindow(winPointer, 5);
+			foreach (Actions a in actionList)
+			{
+				a.perform();
+			}
+			if (answering && answeringString != null)
+			{
+				try
+				{
+					SpeechSynthesizer synth = new SpeechSynthesizer();
+					if (synth != null)
+					{
+						synth.SpeakAsync(answeringString);
+					}
+				}
+				catch { }
+			}
 
-            return returnString;
-        }
+			if (answeringSound && answeringSoundPath != null)
+			{
+				if (answeringSoundPath.IndexOf(".wav") == answeringSoundPath.Length - 4)
+				{
+					System.Media.SoundPlayer player = new System.Media.SoundPlayer();
+					player.SoundLocation = answeringSoundPath;
+					player.Play();
+				}
+				else if (answeringSoundPath.IndexOf(".mp3") == answeringSoundPath.Length - 4)
+				{
+					WMPLib.WindowsMediaPlayer wplayer = new WMPLib.WindowsMediaPlayer();
 
-        [DllImport("User32.dll")]
-        static extern int SetForegroundWindow(IntPtr point);
-
-        [DllImport("User32.dll")]
-        static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-
-        public void Perform(IntPtr winPointer) {
-            SetForegroundWindow(winPointer);
-            ShowWindow(winPointer, 5);
-            foreach (Actions a in ActionList) {
-                a.Perform();
-            }
-            if (Answering && AnsweringString != null) {
-                try {
-                    SpeechSynthesizer synth = new SpeechSynthesizer();
-                    if (synth != null) {
-                        synth.SpeakAsync(AnsweringString);
-                    }
-                }
-                catch(Exception e){
-                    
-                }
-            }
-
-            if (AnsweringSound && AnsweringSoundPath != null) {
-                if (AnsweringSoundPath.IndexOf(".wav") == AnsweringSoundPath.Length-4) {
-                    System.Media.SoundPlayer player = new System.Media.SoundPlayer();
-                    player.SoundLocation = AnsweringSoundPath;
-                    player.Play();
-                }
-                else if (AnsweringSoundPath.IndexOf(".mp3") == AnsweringSoundPath.Length - 4) {
-                    WMPLib.WindowsMediaPlayer wplayer = new WMPLib.WindowsMediaPlayer();
-
-                    wplayer.URL = AnsweringSoundPath;
-                    wplayer.controls.play();
-                }
-            }
-        }
-    }
+					wplayer.URL = answeringSoundPath;
+					wplayer.controls.play();
+				}
+			}
+		}
+	}
 }
